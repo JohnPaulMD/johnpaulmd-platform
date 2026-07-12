@@ -6,7 +6,7 @@
 
 ## 🌟 Overview
 
-JohnPaulMD Platform is the official digital platform of **John Paul**, built under **Manus Dei Solutions**.
+JohnPaulMD Platform is the official digital platform of **JohnPaul Ozoigbo**, built under **Manus Dei Solutions**.
 
 The platform is designed to showcase:
 
@@ -69,7 +69,7 @@ Status:
 
 ## 👨‍💻 Author
 
-**John Paul**
+**JohnPaul Arinze Ozoigbo**
 
 Founder, **Manus Dei Solutions**
 
