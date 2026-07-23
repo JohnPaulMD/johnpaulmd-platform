@@ -1,26 +1,33 @@
+import Link from "next/link";
+
 type ButtonProps = {
   text: string;
+  href?: string;
   variant?: "primary" | "secondary";
 };
 
 export default function Button({
   text,
+  href = "#",
   variant = "primary",
 }: ButtonProps) {
   const baseStyles =
-    "rounded-full px-8 py-4 font-semibold transition";
+    "inline-flex items-center justify-center rounded-full px-8 py-4 font-semibold transition duration-300";
 
   const variants = {
     primary:
       "bg-yellow-500 text-black hover:bg-yellow-400",
 
     secondary:
-      "border border-white text-white hover:bg-white hover:text-[#071A3D]",
+      "border border-[#071A3D] text-[#071A3D] hover:bg-[#071A3D] hover:text-white",
   };
 
   return (
-    <button className={`${baseStyles} ${variants[variant]}`}>
+    <Link
+      href={href}
+      className={`${baseStyles} ${variants[variant]}`}
+    >
       {text}
-    </button>
+    </Link>
   );
 }

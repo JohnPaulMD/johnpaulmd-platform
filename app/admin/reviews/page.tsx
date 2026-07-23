@@ -1,0 +1,781 @@
+"use client";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import { useRouter } from "next/navigation";
+
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  updateDoc,
+} from "firebase/firestore";
+
+import {
+  Check,
+  Edit,
+  MessageSquare,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
+
+import { db } from "@/lib/firebase";
+
+interface ReviewItem {
+  id: string;
+
+  name: string;
+
+  role: string;
+
+  universityOrganisation: string;
+
+  review: string;
+
+  rating: number;
+
+  image: string;
+
+  month: string;
+
+  year: number;
+
+  featured: boolean;
+
+  status:
+    | "Pending"
+    | "Published"
+    | "Rejected";
+}
+
+export default function AdminReviewsPage() {
+  const router = useRouter();
+
+  const [reviews, setReviews] =
+    useState<ReviewItem[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [processingId, setProcessingId] =
+    useState<string | null>(null);
+
+  const [activeFilter, setActiveFilter] =
+    useState<
+      | "All"
+      | "Pending"
+      | "Published"
+      | "Rejected"
+    >("All");
+
+  async function loadReviews() {
+    try {
+      setLoading(true);
+
+      const reviewsQuery = query(
+        collection(db, "reviews"),
+        orderBy(
+          "submittedAt",
+          "desc"
+        )
+      );
+
+      const snapshot =
+        await getDocs(
+          reviewsQuery
+        );
+
+      const items: ReviewItem[] =
+        snapshot.docs.map(
+          (document) => {
+            const data =
+              document.data();
+
+            return {
+              id:
+                document.id,
+
+              name:
+                data.name ||
+                "Unnamed Client",
+
+              role:
+                data.role || "",
+
+              universityOrganisation:
+                data.universityOrganisation ||
+                "",
+
+              review:
+                data.review || "",
+
+              rating:
+                Number(
+                  data.rating || 0
+                ),
+
+              image:
+                data.image || "",
+
+              month:
+                data.month || "",
+
+              year:
+                Number(
+                  data.year || 0
+                ),
+
+              featured:
+                Boolean(
+                  data.featured
+                ),
+
+              status:
+                data.status ||
+                "Pending",
+            };
+          }
+        );
+
+      setReviews(items);
+    } catch (error) {
+      console.error(
+        "Failed to load reviews:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void Promise.resolve().then(
+      loadReviews
+    );
+  }, []);
+
+  async function changeStatus(
+    id: string,
+    status:
+      | "Pending"
+      | "Published"
+      | "Rejected"
+  ) {
+    try {
+      setProcessingId(id);
+
+      await updateDoc(
+        doc(
+          db,
+          "reviews",
+          id
+        ),
+        {
+          status,
+        }
+      );
+
+      setReviews(
+        (currentReviews) =>
+          currentReviews.map(
+            (item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    status,
+                  }
+                : item
+          )
+      );
+    } catch (error) {
+      console.error(
+        "Failed to update review status:",
+        error
+      );
+
+      alert(
+        "Failed to update review."
+      );
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function toggleFeatured(
+    id: string,
+    currentFeatured: boolean
+  ) {
+    try {
+      setProcessingId(id);
+
+      const newFeatured =
+        !currentFeatured;
+
+      await updateDoc(
+        doc(
+          db,
+          "reviews",
+          id
+        ),
+        {
+          featured:
+            newFeatured,
+        }
+      );
+
+      setReviews(
+        (currentReviews) =>
+          currentReviews.map(
+            (item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    featured:
+                      newFeatured,
+                  }
+                : item
+          )
+      );
+    } catch (error) {
+      console.error(
+        "Failed to update featured status:",
+        error
+      );
+
+      alert(
+        "Failed to update featured status."
+      );
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleDelete(
+    id: string,
+    name: string
+  ) {
+    const confirmed =
+      window.confirm(
+        `Are you sure you want to permanently delete the review from "${name}"?`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setProcessingId(id);
+
+      await deleteDoc(
+        doc(
+          db,
+          "reviews",
+          id
+        )
+      );
+
+      setReviews(
+        (currentReviews) =>
+          currentReviews.filter(
+            (item) =>
+              item.id !== id
+          )
+      );
+    } catch (error) {
+      console.error(
+        "Failed to delete review:",
+        error
+      );
+
+      alert(
+        "Failed to delete review."
+      );
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  const pendingCount =
+    reviews.filter(
+      (item) =>
+        item.status === "Pending"
+    ).length;
+
+  const publishedCount =
+    reviews.filter(
+      (item) =>
+        item.status === "Published"
+    ).length;
+
+  const rejectedCount =
+    reviews.filter(
+      (item) =>
+        item.status === "Rejected"
+    ).length;
+
+  const filteredReviews =
+    activeFilter === "All"
+      ? reviews
+      : reviews.filter(
+          (item) =>
+            item.status ===
+            activeFilter
+        );
+
+  return (
+    <div className="space-y-8">
+
+      {/* HEADER */}
+
+      <div>
+
+        <h1 className="text-4xl font-bold text-[#071A3D]">
+          Reviews
+        </h1>
+
+        <p className="mt-2 text-gray-500">
+          Review and manage testimonials submitted through your website.
+        </p>
+
+      </div>
+
+      {/* STATISTICS */}
+
+      <div className="grid gap-5 md:grid-cols-3">
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+
+          <p className="text-sm font-semibold text-gray-500">
+            Pending
+          </p>
+
+          <p className="mt-2 text-3xl font-bold text-yellow-600">
+            {pendingCount}
+          </p>
+
+        </div>
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+
+          <p className="text-sm font-semibold text-gray-500">
+            Published
+          </p>
+
+          <p className="mt-2 text-3xl font-bold text-green-600">
+            {publishedCount}
+          </p>
+
+        </div>
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+
+          <p className="text-sm font-semibold text-gray-500">
+            Rejected
+          </p>
+
+          <p className="mt-2 text-3xl font-bold text-red-600">
+            {rejectedCount}
+          </p>
+
+        </div>
+
+      </div>
+
+      {/* REVIEW LIBRARY */}
+
+      <section className="rounded-3xl bg-white p-8 shadow-sm">
+
+        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+
+          <div>
+
+            <h2 className="text-2xl font-bold text-[#071A3D]">
+              Review Library
+            </h2>
+
+            <p className="mt-2 text-gray-500">
+              Approve, reject, edit, feature or delete submitted reviews.
+            </p>
+
+          </div>
+
+          {/* FILTERS */}
+
+          <div className="flex flex-wrap gap-2">
+
+            {[
+              "All",
+              "Pending",
+              "Published",
+              "Rejected",
+            ].map(
+              (filter) => (
+
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() =>
+                    setActiveFilter(
+                      filter as
+                        | "All"
+                        | "Pending"
+                        | "Published"
+                        | "Rejected"
+                    )
+                  }
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    activeFilter ===
+                    filter
+                      ? "bg-[#071A3D] text-white"
+                      : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {filter}
+                </button>
+
+              )
+            )}
+
+          </div>
+
+        </div>
+
+        {/* LOADING */}
+
+        {loading && (
+
+          <div className="py-20 text-center">
+
+            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#071A3D]" />
+
+            <p className="mt-4 text-gray-500">
+              Loading reviews...
+            </p>
+
+          </div>
+
+        )}
+
+        {/* EMPTY */}
+
+        {!loading &&
+          filteredReviews.length ===
+            0 && (
+
+          <div className="mt-8 rounded-2xl border border-dashed border-gray-300 py-16 text-center">
+
+            <MessageSquare
+              size={42}
+              className="mx-auto text-gray-400"
+            />
+
+            <h3 className="mt-4 font-semibold text-[#071A3D]">
+              No reviews found
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Submitted reviews will appear here.
+            </p>
+
+          </div>
+
+        )}
+
+        {/* REVIEWS */}
+
+        {!loading &&
+          filteredReviews.length >
+            0 && (
+
+          <div className="mt-8 space-y-5">
+
+            {filteredReviews.map(
+              (item) => (
+
+                <article
+                  key={item.id}
+                  className="rounded-2xl border border-gray-200 p-6"
+                >
+
+                  <div className="flex flex-col justify-between gap-6 xl:flex-row">
+
+                    {/* REVIEW DETAILS */}
+
+                    <div className="flex-1">
+
+                      {/* BADGES */}
+
+                      <div className="mb-4 flex flex-wrap gap-2">
+
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${
+                            item.status ===
+                            "Published"
+                              ? "bg-green-100 text-green-700"
+                              : item.status ===
+                                "Rejected"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+
+                        {item.featured && (
+
+                          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                            Featured
+                          </span>
+
+                        )}
+
+                      </div>
+
+                      {/* NAME */}
+
+                      <h3 className="text-xl font-bold text-[#071A3D]">
+                        {item.name}
+                      </h3>
+
+                      {/* ROLE */}
+
+                      {(item.role ||
+                        item.universityOrganisation) && (
+
+                        <p className="mt-1 text-sm text-gray-500">
+
+                          {item.role}
+
+                          {item.role &&
+                          item.universityOrganisation
+                            ? " • "
+                            : ""}
+
+                          {
+                            item.universityOrganisation
+                          }
+
+                        </p>
+
+                      )}
+
+                      {/* DATE */}
+
+                      {(item.month ||
+                        item.year) && (
+
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+
+                          {item.month}{" "}
+                          {item.year || ""}
+
+                        </p>
+
+                      )}
+
+                      {/* STARS */}
+
+                      <div className="mt-4 flex items-center gap-1">
+
+                        {[1, 2, 3, 4, 5].map(
+                          (star) => (
+
+                            <Star
+                              key={star}
+                              size={18}
+                              fill={
+                                star <=
+                                item.rating
+                                  ? "currentColor"
+                                  : "none"
+                              }
+                              className={
+                                star <=
+                                item.rating
+                                  ? "text-yellow-500"
+                                  : "text-gray-300"
+                              }
+                            />
+
+                          )
+                        )}
+
+                        <span className="ml-2 text-sm font-semibold text-gray-500">
+                          {item.rating}/5
+                        </span>
+
+                      </div>
+
+                      {/* TESTIMONIAL */}
+
+                      <p className="mt-5 max-w-3xl leading-7 text-gray-600">
+                        “{item.review}”
+                      </p>
+
+                    </div>
+
+                    {/* ACTIONS */}
+
+                    <div className="flex flex-wrap content-start gap-2 xl:max-w-sm xl:justify-end">
+
+                      {/* APPROVE */}
+
+                      {item.status !==
+                        "Published" && (
+
+                        <button
+                          type="button"
+                          disabled={
+                            processingId ===
+                            item.id
+                          }
+                          onClick={() =>
+                            changeStatus(
+                              item.id,
+                              "Published"
+                            )
+                          }
+                          className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
+                        >
+                          <Check
+                            size={17}
+                          />
+
+                          Approve
+                        </button>
+
+                      )}
+
+                      {/* REJECT */}
+
+                      {item.status !==
+                        "Rejected" && (
+
+                        <button
+                          type="button"
+                          disabled={
+                            processingId ===
+                            item.id
+                          }
+                          onClick={() =>
+                            changeStatus(
+                              item.id,
+                              "Rejected"
+                            )
+                          }
+                          className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                        >
+                          <X
+                            size={17}
+                          />
+
+                          Reject
+                        </button>
+
+                      )}
+
+                      {/* FEATURE */}
+
+                      {item.status ===
+                        "Published" && (
+
+                        <button
+                          type="button"
+                          disabled={
+                            processingId ===
+                            item.id
+                          }
+                          onClick={() =>
+                            toggleFeatured(
+                              item.id,
+                              item.featured
+                            )
+                          }
+                          className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                            item.featured
+                              ? "border-blue-200 bg-blue-50 text-blue-700"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Star
+                            size={17}
+                            fill={
+                              item.featured
+                                ? "currentColor"
+                                : "none"
+                            }
+                          />
+
+                          {item.featured
+                            ? "Unfeature"
+                            : "Feature"}
+                        </button>
+
+                      )}
+
+                      {/* EDIT */}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            `/admin/reviews/${item.id}/edit`
+                          )
+                        }
+                        className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-[#071A3D] transition hover:bg-gray-50"
+                      >
+                        <Edit
+                          size={17}
+                        />
+
+                        Edit
+                      </button>
+
+                      {/* DELETE */}
+
+                      <button
+                        type="button"
+                        disabled={
+                          processingId ===
+                          item.id
+                        }
+                        onClick={() =>
+                          handleDelete(
+                            item.id,
+                            item.name
+                          )
+                        }
+                        className="flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                      >
+                        <Trash2
+                          size={17}
+                        />
+
+                        Delete
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </article>
+
+              )
+            )}
+
+          </div>
+
+        )}
+
+      </section>
+
+    </div>
+  );
+}
