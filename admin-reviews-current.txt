@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  FormEvent,
   useEffect,
   useState,
 } from "react";
@@ -20,10 +19,7 @@ import {
 
 import {
   Check,
-  CheckCircle2,
-  Clipboard,
   Edit,
-  Link2,
   MessageSquare,
   Star,
   Trash2,
@@ -31,8 +27,6 @@ import {
 } from "lucide-react";
 
 import { db } from "@/lib/firebase";
-
-import { createReviewInvitation } from "@/services/reviewInvitations/createReviewInvitation";
 
 interface ReviewItem {
   id: string;
@@ -80,34 +74,6 @@ export default function AdminReviewsPage() {
       | "Published"
       | "Rejected"
     >("All");
-
-  /*
-   * REVIEW INVITATION
-   */
-
-  const [clientName, setClientName] =
-    useState("");
-
-  const [clientEmail, setClientEmail] =
-    useState("");
-
-  const [
-    generatingInvitation,
-    setGeneratingInvitation,
-  ] = useState(false);
-
-  const [
-    generatedLink,
-    setGeneratedLink,
-  ] = useState("");
-
-  const [
-    invitationError,
-    setInvitationError,
-  ] = useState("");
-
-  const [copied, setCopied] =
-    useState(false);
 
   async function loadReviews() {
     try {
@@ -194,121 +160,6 @@ export default function AdminReviewsPage() {
       loadReviews
     );
   }, []);
-
-  /*
-   * GENERATE REVIEW INVITATION
-   */
-
-  async function handleGenerateInvitation(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    if (!clientName.trim()) {
-      setInvitationError(
-        "Please enter the client's name."
-      );
-
-      return;
-    }
-
-    try {
-      setGeneratingInvitation(true);
-
-      setInvitationError("");
-
-      setGeneratedLink("");
-
-      setCopied(false);
-
-      const invitation =
-        await createReviewInvitation({
-          clientName:
-            clientName.trim(),
-
-          clientEmail:
-            clientEmail.trim(),
-        });
-
-      const configuredSiteUrl =
-        process.env
-          .NEXT_PUBLIC_SITE_URL;
-
-      const siteUrl =
-        configuredSiteUrl
-          ? configuredSiteUrl.replace(
-              /\/$/,
-              ""
-            )
-          : window.location.origin;
-
-      const reviewLink =
-        `${siteUrl}/review/submit/${invitation.token}`;
-
-      setGeneratedLink(
-        reviewLink
-      );
-    } catch (error) {
-      console.error(
-        "Failed to create review invitation:",
-        error
-      );
-
-      setInvitationError(
-        "We couldn't generate the review link. Please try again."
-      );
-    } finally {
-      setGeneratingInvitation(
-        false
-      );
-    }
-  }
-
-  async function handleCopyLink() {
-    if (!generatedLink) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(
-        generatedLink
-      );
-
-      setCopied(true);
-
-      window.setTimeout(
-        () => {
-          setCopied(false);
-        },
-        2500
-      );
-    } catch (error) {
-      console.error(
-        "Failed to copy review link:",
-        error
-      );
-
-      setInvitationError(
-        "The link was generated, but it could not be copied automatically. Please copy it manually."
-      );
-    }
-  }
-
-  function resetInvitationForm() {
-    setClientName("");
-
-    setClientEmail("");
-
-    setGeneratedLink("");
-
-    setInvitationError("");
-
-    setCopied(false);
-  }
-
-  /*
-   * REVIEW MODERATION
-   */
 
   async function changeStatus(
     id: string,
@@ -490,238 +341,10 @@ export default function AdminReviewsPage() {
         </h1>
 
         <p className="mt-2 text-gray-500">
-          Generate private client review links and manage testimonials submitted through your website.
+          Review and manage testimonials submitted through your website.
         </p>
 
       </div>
-
-      {/* REVIEW INVITATION GENERATOR */}
-
-      <section className="overflow-hidden rounded-3xl bg-white shadow-sm">
-
-        <div className="border-b border-gray-100 p-6 md:p-8">
-
-          <div className="flex items-start gap-4">
-
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#071A3D]/10 text-[#071A3D]">
-
-              <Link2
-                size={24}
-              />
-
-            </div>
-
-            <div>
-
-              <h2 className="text-2xl font-bold text-[#071A3D]">
-                Generate Client Review Link
-              </h2>
-
-              <p className="mt-2 max-w-2xl leading-7 text-gray-500">
-                Create a private, unique review link for a client.
-                Each invitation can be used once.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="p-6 md:p-8">
-
-          <form
-            onSubmit={
-              handleGenerateInvitation
-            }
-          >
-
-            <div className="grid gap-6 lg:grid-cols-2">
-
-              {/* CLIENT NAME */}
-
-              <div>
-
-                <label
-                  htmlFor="clientName"
-                  className="mb-2 block text-sm font-bold text-[#071A3D]"
-                >
-                  Client Name *
-                </label>
-
-                <input
-                  id="clientName"
-                  type="text"
-                  value={clientName}
-                  onChange={(event) => {
-                    setClientName(
-                      event.target.value
-                    );
-
-                    if (
-                      invitationError
-                    ) {
-                      setInvitationError(
-                        ""
-                      );
-                    }
-                  }}
-                  placeholder="Enter client's full name"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-[#071A3D] focus:ring-2 focus:ring-[#071A3D]/10"
-                />
-
-              </div>
-
-              {/* CLIENT EMAIL */}
-
-              <div>
-
-                <label
-                  htmlFor="clientEmail"
-                  className="mb-2 block text-sm font-bold text-[#071A3D]"
-                >
-                  Client Email
-                  <span className="ml-1 font-normal text-gray-400">
-                    (optional)
-                  </span>
-                </label>
-
-                <input
-                  id="clientEmail"
-                  type="email"
-                  value={clientEmail}
-                  onChange={(event) =>
-                    setClientEmail(
-                      event.target.value
-                    )
-                  }
-                  placeholder="client@example.com"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-[#071A3D] focus:ring-2 focus:ring-[#071A3D]/10"
-                />
-
-              </div>
-
-            </div>
-
-            {invitationError && (
-
-              <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
-                {invitationError}
-              </div>
-
-            )}
-
-            <div className="mt-6">
-
-              <button
-                type="submit"
-                disabled={
-                  generatingInvitation
-                }
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#071A3D] px-6 py-3 font-semibold text-white transition hover:bg-[#0A2557] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-
-                <Link2
-                  size={18}
-                />
-
-                {generatingInvitation
-                  ? "Generating Link..."
-                  : "Generate Review Link"}
-
-              </button>
-
-            </div>
-
-          </form>
-
-          {/* GENERATED LINK */}
-
-          {generatedLink && (
-
-            <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-5 md:p-6">
-
-              <div className="flex items-start gap-3">
-
-                <CheckCircle2
-                  size={22}
-                  className="mt-0.5 shrink-0 text-green-600"
-                />
-
-                <div className="min-w-0 flex-1">
-
-                  <h3 className="font-bold text-green-800">
-                    Review invitation created
-                  </h3>
-
-                  <p className="mt-1 text-sm leading-6 text-green-700">
-                    Send this private link to the client.
-                    Once they submit their review, this invitation will be marked as used.
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="mt-5 flex flex-col gap-3 lg:flex-row">
-
-                <input
-                  type="text"
-                  readOnly
-                  value={
-                    generatedLink
-                  }
-                  onFocus={(event) =>
-                    event.currentTarget.select()
-                  }
-                  className="min-w-0 flex-1 rounded-xl border border-green-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={
-                    handleCopyLink
-                  }
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-green-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-800"
-                >
-
-                  {copied ? (
-                    <>
-                      <Check
-                        size={18}
-                      />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Clipboard
-                        size={18}
-                      />
-                      Copy Link
-                    </>
-                  )}
-
-                </button>
-
-              </div>
-
-              <button
-                type="button"
-                onClick={
-                  resetInvitationForm
-                }
-                className="mt-4 text-sm font-semibold text-green-800 underline-offset-4 hover:underline"
-              >
-                Generate another link
-              </button>
-
-            </div>
-
-          )}
-
-        </div>
-
-      </section>
 
       {/* STATISTICS */}
 
@@ -767,7 +390,7 @@ export default function AdminReviewsPage() {
 
       {/* REVIEW LIBRARY */}
 
-      <section className="rounded-3xl bg-white p-6 shadow-sm md:p-8">
+      <section className="rounded-3xl bg-white p-8 shadow-sm">
 
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
 

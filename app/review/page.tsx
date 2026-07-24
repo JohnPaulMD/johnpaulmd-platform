@@ -1,468 +1,261 @@
 "use client";
 
 import {
-  FormEvent,
+  useEffect,
   useState,
 } from "react";
 
-import Link from "next/link";
-
 import {
-  CheckCircle2,
   MessageSquareQuote,
   Star,
 } from "lucide-react";
 
-import { submitReview } from "@/services/reviews/submitReview";
+import {
+  getPublishedReviews,
+  PublishedReview,
+} from "@/services/reviews/getPublishedReviews";
 
 export default function ReviewPage() {
-  const [name, setName] =
-    useState("");
-
-  const [role, setRole] =
-    useState("");
-
   const [
-    universityOrganisation,
-    setUniversityOrganisation,
-  ] = useState("");
+    reviews,
+    setReviews,
+  ] = useState<PublishedReview[]>(
+    []
+  );
 
-  const [review, setReview] =
-    useState("");
-
-  // 0 means no rating has been selected yet
-  const [rating, setRating] =
-    useState(0);
-
-  const [submitting, setSubmitting] =
-    useState(false);
-
-  const [submitted, setSubmitted] =
-    useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
   const [error, setError] =
     useState("");
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
+  useEffect(() => {
+    async function loadReviews() {
+      try {
+        const data =
+          await getPublishedReviews();
 
-    if (!name.trim()) {
-      setError(
-        "Please enter your name."
-      );
+        setReviews(data);
+      } catch (error) {
+        console.error(
+          "Failed to load published reviews:",
+          error
+        );
 
-      return;
+        setError(
+          "We couldn't load the reviews right now."
+        );
+      } finally {
+        setLoading(false);
+      }
     }
 
-    if (rating === 0) {
-      setError(
-        "Please select a star rating."
-      );
-
-      return;
-    }
-
-    if (!review.trim()) {
-      setError(
-        "Please enter your review."
-      );
-
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      setError("");
-
-      await submitReview({
-        name,
-        role,
-        universityOrganisation,
-        review,
-        rating,
-      });
-
-      setSubmitted(true);
-
-      // Reset form
-      setName("");
-
-      setRole("");
-
-      setUniversityOrganisation("");
-
-      setReview("");
-
-      setRating(0);
-    } catch (error) {
-      console.error(
-        "Review submission failed:",
-        error
-      );
-
-      setError(
-        "We couldn't submit your review. Please try again."
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  if (submitted) {
-    return (
-      <section className="px-6 py-24">
-
-        <div className="mx-auto max-w-2xl">
-
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center md:p-14">
-
-            <CheckCircle2
-              size={54}
-              className="mx-auto text-green-400"
-            />
-
-            <h1 className="mt-6 text-3xl font-bold text-white md:text-4xl">
-              Thank You for Your Review
-            </h1>
-
-            <p className="mx-auto mt-5 max-w-lg leading-8 text-white/65">
-              Your feedback has been submitted successfully.
-              It will be reviewed before being published on
-              the website.
-            </p>
-
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSubmitted(false)
-                }
-                className="rounded-xl border border-white/20 px-6 py-3 font-semibold text-white transition hover:bg-white/10"
-              >
-                Submit Another Review
-              </button>
-
-              <Link
-                href="/"
-                className="rounded-xl bg-white px-6 py-3 font-semibold text-[#071A3D]"
-              >
-                Return Home
-              </Link>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-    );
-  }
+    loadReviews();
+  }, []);
 
   return (
-    <section className="px-6 py-20 md:py-24">
+    <main className="min-h-screen bg-[#F8F7F3]">
 
-      <div className="mx-auto max-w-3xl">
+      {/* HERO */}
 
-        {/* HEADER */}
+      <section className="bg-[#071A3D] px-4 pb-16 pt-32 text-white sm:px-6 sm:pb-20 sm:pt-36">
 
-        <div className="mb-10 text-center">
+        <div className="mx-auto max-w-5xl text-center">
 
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
 
             <MessageSquareQuote
               size={28}
-              className="text-white"
             />
 
           </div>
 
-          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-white/50">
-            Client Feedback
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-blue-200 sm:text-sm">
+            Client Testimonials
           </p>
 
-          <h1 className="mt-3 text-4xl font-bold text-white md:text-5xl">
-            Share Your Experience
+          <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl lg:text-6xl">
+            What Clients Say
           </h1>
 
-          <p className="mx-auto mt-5 max-w-2xl leading-8 text-white/65">
-            Thank you for working with Manus Dei Solutions.
-            Your feedback helps us improve our services and
-            share real experiences with future clients.
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base sm:leading-8 lg:text-lg">
+            Read experiences shared by clients who have
+            worked with Manus Dei Solutions across research,
+            data analytics and professional projects.
           </p>
 
         </div>
 
-        {/* FORM */}
+      </section>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-3xl bg-white p-7 shadow-xl md:p-10"
-        >
+      {/* REVIEWS */}
 
-          <div className="space-y-7">
+      <section className="px-4 py-14 sm:px-6 sm:py-16 lg:py-20">
 
-            {/* FULL NAME */}
+        <div className="mx-auto max-w-7xl">
 
-            <div>
+          {loading && (
 
-              <label
-                htmlFor="name"
-                className="mb-2 block font-semibold text-[#071A3D]"
-              >
-                Full Name *
-              </label>
+            <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
 
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(event) =>
-                  setName(
-                    event.target.value
-                  )
-                }
-                placeholder="Enter your full name"
-                required
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-[#071A3D] focus:ring-2 focus:ring-[#071A3D]/10"
-              />
+              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[#071A3D]" />
 
-            </div>
-
-            {/* ROLE + UNIVERSITY / ORGANISATION */}
-
-            <div className="grid gap-6 md:grid-cols-2">
-
-              {/* ROLE */}
-
-              <div>
-
-                <label
-                  htmlFor="role"
-                  className="mb-2 block font-semibold text-[#071A3D]"
-                >
-                  Role / Position
-                </label>
-
-                <input
-                  id="role"
-                  type="text"
-                  value={role}
-                  onChange={(event) =>
-                    setRole(
-                      event.target.value
-                    )
-                  }
-                  placeholder="e.g. Student, Researcher, Lecturer"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-[#071A3D] focus:ring-2 focus:ring-[#071A3D]/10"
-                />
-
-              </div>
-
-              {/* UNIVERSITY / ORGANISATION */}
-
-              <div>
-
-                <label
-                  htmlFor="universityOrganisation"
-                  className="mb-2 block font-semibold text-[#071A3D]"
-                >
-                  University / Organisation
-                </label>
-
-                <input
-                  id="universityOrganisation"
-                  type="text"
-                  value={
-                    universityOrganisation
-                  }
-                  onChange={(event) =>
-                    setUniversityOrganisation(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Enter your university or organisation"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-[#071A3D] focus:ring-2 focus:ring-[#071A3D]/10"
-                />
-
-              </div>
-
-            </div>
-
-            {/* RATING */}
-
-            <div>
-
-              <label className="mb-2 block font-semibold text-[#071A3D]">
-                Your Rating *
-              </label>
-
-              <p className="mb-3 text-sm text-gray-500">
-                Click a star to select your rating.
+              <p className="mt-4 text-gray-500">
+                Loading reviews...
               </p>
 
-              <div className="flex flex-wrap items-center gap-2">
-
-                {[1, 2, 3, 4, 5].map(
-                  (star) => (
-
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => {
-                        setRating(star);
-
-                        if (error === "Please select a star rating.") {
-                          setError("");
-                        }
-                      }}
-                      aria-label={`Give ${star} ${
-                        star === 1
-                          ? "star"
-                          : "stars"
-                      }`}
-                      aria-pressed={
-                        rating === star
-                      }
-                      className="cursor-pointer rounded-lg p-1 transition duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#071A3D]/30"
-                    >
-
-                      <Star
-                        size={38}
-                        fill={
-                          star <= rating
-                            ? "currentColor"
-                            : "none"
-                        }
-                        className={
-                          star <= rating
-                            ? "text-yellow-500"
-                            : "text-gray-300"
-                        }
-                      />
-
-                    </button>
-
-                  )
-                )}
-
-              </div>
-
-              {/* RATING DESCRIPTION */}
-
-              <div className="mt-3 min-h-6">
-
-                {rating === 0 && (
-
-                  <span className="text-sm text-gray-500">
-                    No rating selected
-                  </span>
-
-                )}
-
-                {rating > 0 && (
-
-                  <>
-                    <span className="font-semibold text-[#071A3D]">
-                      {rating} / 5
-                    </span>
-
-                    <span className="ml-2 text-sm text-gray-500">
-
-                      {rating === 1 &&
-                        "Poor"}
-
-                      {rating === 2 &&
-                        "Fair"}
-
-                      {rating === 3 &&
-                        "Good"}
-
-                      {rating === 4 &&
-                        "Very Good"}
-
-                      {rating === 5 &&
-                        "Excellent"}
-
-                    </span>
-                  </>
-
-                )}
-
-              </div>
-
             </div>
 
-            {/* REVIEW */}
+          )}
 
-            <div>
+          {!loading && error && (
 
-              <label
-                htmlFor="review"
-                className="mb-2 block font-semibold text-[#071A3D]"
-              >
-                Your Review *
-              </label>
-
-              <textarea
-                id="review"
-                rows={7}
-                value={review}
-                onChange={(event) =>
-                  setReview(
-                    event.target.value
-                  )
-                }
-                placeholder="Tell us about your experience..."
-                required
-                className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 leading-7 text-gray-900 outline-none transition focus:border-[#071A3D] focus:ring-2 focus:ring-[#071A3D]/10"
-              />
-
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
+              {error}
             </div>
 
-            {/* CONSENT NOTICE */}
+          )}
 
-            <div className="rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-600">
+          {!loading &&
+            !error &&
+            reviews.length === 0 && (
 
-              By submitting this review, you agree that
-              your name, role, University / Organisation
-              and testimonial may be displayed on this
-              website after approval.
+              <div className="rounded-3xl bg-white px-6 py-14 text-center shadow-sm sm:py-16">
 
-            </div>
+                <MessageSquareQuote
+                  size={48}
+                  className="mx-auto text-gray-300"
+                />
 
-            {/* ERROR */}
+                <h2 className="mt-5 text-2xl font-bold text-[#071A3D]">
+                  Reviews Coming Soon
+                </h2>
 
-            {error && (
+                <p className="mx-auto mt-3 max-w-xl leading-7 text-gray-500">
+                  Published client testimonials will
+                  appear here.
+                </p>
 
-              <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
-                {error}
               </div>
 
             )}
 
-            {/* SUBMIT */}
+          {!loading &&
+            !error &&
+            reviews.length > 0 && (
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-xl bg-[#071A3D] px-6 py-4 font-bold text-white transition hover:bg-[#0A2557] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting
-                ? "Submitting Review..."
-                : "Submit Review"}
-            </button>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 
-          </div>
+                {reviews.map(
+                  (review) => (
 
-        </form>
+                    <article
+                      key={review.id}
+                      className="flex h-full flex-col rounded-2xl bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl sm:p-7"
+                    >
 
-      </div>
+                      {/* STARS */}
 
-    </section>
+                      <div
+                        className="flex gap-1"
+                        aria-label={`${review.rating} out of 5 stars`}
+                      >
+
+                        {[1, 2, 3, 4, 5].map(
+                          (star) => (
+
+                            <Star
+                              key={star}
+                              size={19}
+                              fill={
+                                star <=
+                                review.rating
+                                  ? "currentColor"
+                                  : "none"
+                              }
+                              className={
+                                star <=
+                                review.rating
+                                  ? "text-yellow-500"
+                                  : "text-gray-300"
+                              }
+                            />
+
+                          )
+                        )}
+
+                      </div>
+
+                      {/* REVIEW */}
+
+                      <p className="mt-5 flex-1 whitespace-pre-line break-words text-sm leading-7 text-gray-600 sm:text-base sm:leading-8">
+                        &ldquo;
+                        {review.review}
+                        &rdquo;
+                      </p>
+
+                      {/* CLIENT */}
+
+                      <div className="mt-7 border-t border-gray-100 pt-5">
+
+                        <p className="font-bold text-[#071A3D]">
+                          {review.name}
+                        </p>
+
+                        {(review.role ||
+                          review.universityOrganisation) && (
+
+                          <p className="mt-1 text-sm leading-6 text-gray-500">
+
+                            {review.role}
+
+                            {review.role &&
+                              review.universityOrganisation &&
+                              " · "}
+
+                            {
+                              review.universityOrganisation
+                            }
+
+                          </p>
+
+                        )}
+
+                        {(review.month ||
+                          review.year > 0) && (
+
+                          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-400">
+
+                            {review.month}
+
+                            {review.month &&
+                              review.year >
+                                0 &&
+                              " "}
+
+                            {review.year >
+                              0 &&
+                              review.year}
+
+                          </p>
+
+                        )}
+
+                      </div>
+
+                    </article>
+
+                  )
+                )}
+
+              </div>
+
+            )}
+
+        </div>
+
+      </section>
+
+    </main>
   );
 }
