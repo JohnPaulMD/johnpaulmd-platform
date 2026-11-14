@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -30,12 +31,9 @@ const defaultGeneral: GeneralSettings = {
 };
 
 const defaultHomepage: HomepageSettings = {
-  heroTitle1:
-    "Turning Data into Decisions.",
-  heroTitle2:
-    "Advancing Research.",
-  heroTitle3:
-    "Building Intelligent Solutions.",
+  heroTitle1: "Turning Data into Decisions.",
+  heroTitle2: "Advancing Research.",
+  heroTitle3: "Building Intelligent Solutions.",
   description:
     "Helping researchers, healthcare professionals, businesses and organizations transform complex data into evidence-based decisions through analytics, scientific research and digital innovation.",
   expertise: [
@@ -43,27 +41,22 @@ const defaultHomepage: HomepageSettings = {
     "Medical Research",
     "Digital Innovation",
   ],
-  profileImage:
-    "/profile/johnpaul.png",
+  profileImage: "/profile/johnpaul.png",
 };
 
 export default function HeroSection() {
-  const [general, setGeneral] =
-    useState(defaultGeneral);
+  const [general, setGeneral] = useState(defaultGeneral);
 
-  const [homepage, setHomepage] =
-    useState(defaultHomepage);
+  const [homepage, setHomepage] = useState(defaultHomepage);
 
   useEffect(() => {
     async function load() {
       try {
-        const [
-          generalData,
-          homepageData,
-        ] = await Promise.all([
-          getGeneralSettings(),
-          getHomepageSettings(),
-        ]);
+        const [generalData, homepageData] =
+          await Promise.all([
+            getGeneralSettings(),
+            getHomepageSettings(),
+          ]);
 
         setGeneral(generalData);
         setHomepage(homepageData);
@@ -110,16 +103,14 @@ export default function HeroSection() {
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              {homepage.expertise.map(
-                (item) => (
-                  <span
-                    key={item}
-                    className="rounded-full border border-accent/30 bg-background px-4 py-2 text-sm font-medium text-primary shadow-sm"
-                  >
-                    {item}
-                  </span>
-                )
-              )}
+              {homepage.expertise.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-accent/30 bg-background px-4 py-2 text-sm font-medium text-primary shadow-sm"
+                >
+                  {item}
+                </span>
+              ))}
             </div>
 
             <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:gap-4">
@@ -140,9 +131,7 @@ export default function HeroSection() {
 
           <div className="flex justify-center lg:justify-end">
             <div className="flex w-full max-w-[320px] flex-col items-center">
-
               <div className="relative">
-
                 <div className="absolute -inset-3 rounded-[26px] bg-accent/20 blur-2xl" />
 
                 <Image
@@ -154,13 +143,12 @@ export default function HeroSection() {
                   width={285}
                   height={355}
                   priority
+                  unoptimized
                   className="relative h-auto w-[190px] rounded-[24px] object-cover shadow-2xl sm:w-[215px] md:w-[235px] lg:w-[255px]"
                 />
-
               </div>
 
               <div className="mt-5 text-center">
-
                 <h2 className="text-xl font-bold text-primary sm:text-2xl">
                   {general.fullName}
                 </h2>
@@ -168,13 +156,11 @@ export default function HeroSection() {
                 <p className="mt-1 text-sm font-semibold uppercase tracking-[0.12em] text-accent">
                   {general.brandName}
                 </p>
-
               </div>
 
               <p className="mt-4 text-center text-sm font-medium leading-6 text-muted sm:text-base">
                 {general.professionalTitle}
               </p>
-
             </div>
           </div>
 
